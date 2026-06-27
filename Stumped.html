@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Stumped! - JammyCreatives</title>
     <style>
         body {
@@ -18,19 +18,21 @@
             min-height: 100vh;
             user-select: none;
             box-sizing: border-box;
+            overflow-x: hidden;
         }
         
         #game-box {
             width: 100%;
-            max-width: 440px; /* Perfectly centered safety profile for all phone screens */
+            max-width: 440px; 
             background-color: #9876e0; 
             border: 5px solid #ffffff;
             border-radius: 24px;
             padding: 15px; 
-            box-sizing: border-box; /* Forces all elements to stay inside the borders */
+            box-sizing: border-box; 
             text-align: center;
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
             position: relative;
+            transform-origin: center center;
         }
 
         /* Interactive Action Icons (Cog & Info) */
@@ -220,7 +222,6 @@
             border-radius: 4px;
         }
 
-        /* Fluid Width Fixed Grid Matrix */
         #name-setup {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -403,6 +404,18 @@
             opacity: 0.4;
             box-shadow: none !important;
         }
+
+        @media (max-width: 480px) {
+            body { padding: 5px; }
+            #game-box { 
+                transform: scale(0.85); 
+                margin-top: -10px;
+            }
+            .game-logo { max-width: 80%; }
+            #card { font-size: 17px; min-height: 90px; }
+            #timer-text { font-size: 22px; }
+            .player-btn { height: 65px; font-size: 14px; }
+        }
     </style>
 </head>
 <body>
@@ -523,14 +536,24 @@
     };
 
     let activePool = [];
-    let p1Score = 0, p2Score = 0, activePlayer = 0; 
-    let maxRoundTime = 20, timeLeft = 20, timerId = null, gameActive = false;
-    let p1Name = "Player 1", p2Name = "Player 2", isMuted = false;
+    let p1Score = 0;
+    let p2Score = 0;
+    let activePlayer = 0; 
+    let maxRoundTime = 20; 
+    let timeLeft = 20;
+    let timerId = null;
+    let gameActive = false;
 
+    let p1Name = "Player 1";
+    let p2Name = "Player 2";
+
+    let isMuted = false;
     const countdownAudio = new Audio(BASE_URL + 'countdown.mp3');
     const passAudio = new Audio(BASE_URL + 'pass.mp3');
-    const lobbyAudio = new Audio(BASE_URL + 'lobby.mp3'); lobbyAudio.loop = true;
-    const gameplayAudio = new Audio(BASE_URL + 'gameplay.mp3'); gameplayAudio.loop = true;
+    const lobbyAudio = new Audio(BASE_URL + 'lobby.mp3');
+    lobbyAudio.loop = true;
+    const gameplayAudio = new Audio(BASE_URL + 'gameplay.mp3');
+    gameplayAudio.loop = true;
 
     selectCategory('random');
     applyAudioSettings();
@@ -540,6 +563,22 @@
             lobbyAudio.play().catch(e => {});
         }
         window.removeEventListener('click', initLobbyMusic);
+    });
+
+    // Native Tab State Tracking: silences audio channels instantly on lock screen/home screen exit
+    document.addEventListener("visibilitychange", function() {
+        if (document.hidden) {
+            lobbyAudio.pause();
+            gameplayAudio.pause();
+        } else {
+            if (!isMuted) {
+                if (gameActive) {
+                    gameplayAudio.play().catch(e => {});
+                } else {
+                    lobbyAudio.play().catch(e => {});
+                }
+            }
+        }
     });
 
     function toggleSettingsPanel(show) {
@@ -627,7 +666,8 @@
         if (gameActive) return;
 
         document.getElementById('start-btn').disabled = true;
-        
+
+        // Force explicit stop on the lobby audio stream for responsive mobile tracking
         lobbyAudio.pause();
         lobbyAudio.currentTime = 0;
 
@@ -651,6 +691,10 @@
     }
 
     function runGameTimer() {
+        if (document.hidden) return; 
+        
+        // Guarantee clean pipeline execution on mobile browser contexts
+        gameplayAudio.pause();
         gameplayAudio.currentTime = 0;
         gameplayAudio.play().catch(e => {});
 
@@ -665,6 +709,8 @@
         updateTurnUI();
 
         timerId = setInterval(function() {
+            if (document.hidden) return;
+
             timeLeft -= 0.1;
             if (timeLeft <= 0) {
                 timeLeft = 0;
@@ -705,7 +751,11 @@
         
         gameplayAudio.pause();
         gameplayAudio.currentTime = 0;
-        if (!isMuted) lobbyAudio.play().catch(e => {});
+        
+        if (!isMuted && !document.hidden) {
+            lobbyAudio.currentTime = 0;
+            lobbyAudio.play().catch(e => {});
+        }
 
         document.getElementById('p1-btn').disabled = true;
         document.getElementById('p2-btn').disabled = true;
