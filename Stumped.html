@@ -22,7 +22,7 @@
         
         #game-box {
             width: 100%;
-            max-width: 500px;
+            max-width: 450px; /* Centered tight layout for mobile and desktop viewports */
             background-color: #9876e0; /* Deep Purple Main Box */
             border: 5px solid #ffffff;
             border-radius: 24px;
@@ -215,37 +215,41 @@
 
         /* Branding Configuration */
         .game-logo {
-            max-width: 320px; /* Shrunk visually for layout safety */
+            max-width: 320px; 
             height: auto;
-            margin: -10px auto -7px auto;
+            margin: -10px auto -15px auto;
             display: block;
             filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.2));
         }
         .company-logo {
-            max-width: 260px; /* Shrunk visually for layout safety */
+            max-width: 260px; 
             height: auto;
             margin: 15px auto 0 auto;
             display: block;
             border-radius: 4px;
         }
 
-        /* Input Container */
+        /* Responsive Input Setup Container */
         #name-setup {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: 12px;
             margin-bottom: 15px;
+            width: 100%;
+            box-sizing: border-box;
         }
         .name-input {
             background: rgba(255, 255, 255, 0.2);
             border: 2px dashed #ffffff;
             border-radius: 8px;
-            padding: 10px 0px;
+            padding: 10px 5px;
             color: #ffffff;
             font-size: 14px;
             font-weight: bold;
             text-align: center;
             outline: none;
+            width: 100%;
+            box-sizing: border-box;
         }
         .name-input::placeholder {
             color: #e3dcf9;
@@ -260,13 +264,16 @@
         #scoreboard {
             display: flex;
             justify-content: space-around;
+            align-items: center;
             background-color: #a488e5;
             padding: 14px;
             border-radius: 14px;
             font-weight: 800;
-            font-size: 18px;
+            font-size: 16px;
             margin-bottom: 15px;
             border: 2px solid #ffffff;
+            width: 100%;
+            box-sizing: border-box;
         }
         .p1-color { color: #ffffff; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
         .p2-color { color: #e3dcf9; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
@@ -422,18 +429,26 @@
             transform: none !important;
             border: none !important;
         }
+
+        /* Extra Mobile Optimization Rules */
+        @media (max-width: 480px) {
+            .game-logo { max-width: 85%; margin-bottom: -10px; }
+            #card { font-size: 18px; min-height: 100px; }
+            #timer-text { font-size: 24px; }
+            .player-btn { height: 65px; font-size: 15px; }
+        }
     </style>
 </head>
 <body>
 
 <div id="game-box">
-    <img id="settings-cog" src="Assets/settings.png" alt="Settings" onclick="toggleSettingsPanel(true)">
-    <img id="info-icon" src="Assets/info.png" alt="How to Play Guide" onclick="toggleInfoPanel(true)">
+    <img id="settings-cog" src="" alt="Settings" onclick="toggleSettingsPanel(true)">
+    <img id="info-icon" src="" alt="How to Play Guide" onclick="toggleInfoPanel(true)">
 
     <div id="info-panel">
         <div class="info-content-wrapper">
             <span class="close-x-btn" onclick="toggleInfoPanel(false)">&times;</span>
-            <img id="info-guide-img" src="Assets/FRONT.jpg" alt="How to Play Instructions">
+            <img id="info-guide-img" src="" alt="How to Play Instructions">
         </div>
     </div>
 
@@ -484,7 +499,7 @@
         <button class="btn close-settings-btn" onclick="toggleSettingsPanel(false)">SAVE & CLOSE</button>
     </div>
 
-    <img class="game-logo" src="Assets/StumpedLogo.png" alt="Stumped Logo">
+    <img class="game-logo" src="" alt="Stumped Logo">
 
     <div id="name-setup">
         <input type="text" id="p1-name-input" class="name-input" placeholder="Player 1 Name" oninput="updateNames()">
@@ -523,10 +538,24 @@
         </button>
     </div>
 
-    <img class="company-logo" src="Assets/JammyLogo.png" alt="Jammy Creatives Logo">
+    <img class="company-logo" src="" alt="Jammy Creatives Logo">
 </div>
 
 <script>
+    // ==========================================
+    // ADD YOUR GITHUB USERNAME RIGHT HERE:
+    // ==========================================
+    const GITHUB_USER = "YOUR_GITHUB_USERNAME"; 
+    const BASE_URL = `https://${GITHUB_USER}.github.io/stumped-game/`;
+
+    // Automatically hooks baseline asset rendering pipelines to the repo CDN links
+    document.querySelector('body').style.backgroundImage = `url('${BASE_URL}Assets/GameBackground.png')`;
+    document.getElementById('settings-cog').src = BASE_URL + 'Assets/settings.png';
+    document.getElementById('info-icon').src = BASE_URL + 'Assets/info.png';
+    document.getElementById('info-guide-img').src = BASE_URL + 'Assets/FRONT.jpg';
+    document.querySelector('.game-logo').src = BASE_URL + 'Assets/StumpedLogo.png';
+    document.querySelector('.company-logo').src = BASE_URL + 'Assets/JammyLogo.png';
+
     const categories = {
         popCulture: [
             "Barbie", "Batman", "Yoda", "Hogwarts", "Kardashian", "Shrek", "Beyoncé", "Godzilla", "Marvel", "TARDIS",
@@ -666,22 +695,15 @@
 
     // AUDIO CHANNELS (Default Load Balanced to 10%)
     let isMuted = false;
-    const countdownAudio = new Audio('Assets/countdown.mp3');
-    const passAudio = new Audio('Assets/pass.mp3');
-    const lobbyAudio = new Audio('Assets/lobby.mp3');
+    const countdownAudio = new Audio(BASE_URL + 'Assets/countdown.mp3');
+    const passAudio = new Audio(BASE_URL + 'Assets/pass.mp3');
+    const lobbyAudio = new Audio(BASE_URL + 'Assets/lobby.mp3');
     lobbyAudio.loop = true;
-    const gameplayAudio = new Audio('Assets/gameplay.mp3');
+    const gameplayAudio = new Audio(BASE_URL + 'Assets/gameplay.mp3');
     gameplayAudio.loop = true;
 
     selectCategory('random');
     applyAudioSettings();
-
-    window.addEventListener('click', function initLobbyMusic() {
-        if (!gameActive && lobbyAudio.paused && !isMuted) {
-            lobbyAudio.play().catch(e => {});
-        }
-        window.removeEventListener('click', initLobbyMusic);
-    });
 
     function toggleSettingsPanel(show) {
         if (gameActive && show) return; 
@@ -735,25 +757,6 @@
         }
     }
 
-    function toggleMute() {
-        isMuted = !isMuted;
-        const btn = document.getElementById('mute-toggle');
-        
-        countdownAudio.muted = isMuted;
-        passAudio.muted = isMuted;
-        lobbyAudio.muted = isMuted;
-        gameplayAudio.muted = isMuted;
-
-        if (isMuted) {
-            btn.innerText = "🔇 SOUNDS: MUTED";
-            btn.classList.add('muted');
-        } else {
-            btn.innerText = "🔊 SOUNDS: ON";
-            btn.classList.remove('muted');
-            if (!gameActive) lobbyAudio.play().catch(e => {});
-        }
-    }
-
     function updateNames() {
         const p1Input = document.getElementById('p1-name-input').value.trim();
         const p2Input = document.getElementById('p2-name-input').value.trim();
@@ -769,12 +772,6 @@
 
         if (gameActive) updateTurnUI();
     }
-
-    window.addEventListener('keydown', function(e) {
-        if (!gameActive) return;
-        if (e.key === 'd' || e.key === 'D') passTurn(1);
-        if (e.key === 'k' || e.key === 'K') passTurn(2);
-    });
 
     function triggerSubtleImpact(playerNum) {
         const targetBtn = playerNum === 1 ? document.getElementById('p1-btn') : document.getElementById('p2-btn');
