@@ -540,18 +540,13 @@
     let maxRoundTime = 20, timeLeft = 20, timerId = null, gameActive = false;
     let p1Name = "Player 1", p2Name = "Player 2", isMuted = false;
 
-    const countdownAudio = new Audio(BASE_URL + 'countdown.mp3');
-    const passAudio = new Audio(BASE_URL + 'pass.mp3');
-    const lobbyAudio = new Audio(BASE_URL + 'lobby.mp3'); lobbyAudio.loop = true;
-    const gameplayAudio = new Audio(BASE_URL + 'gameplay.mp3'); gameplayAudio.loop = true;
-
-    let audioWokenUp = false;
-
-    // Force browsers to optimize audio elements for immediate playback effects rather than long-form streaming
+    // Optimized auto-preloading variables configured for zero structural repetition
     const countdownAudio = new Audio(BASE_URL + 'countdown.mp3'); countdownAudio.preload = "auto";
     const passAudio = new Audio(BASE_URL + 'pass.mp3'); passAudio.preload = "auto";
     const lobbyAudio = new Audio(BASE_URL + 'lobby.mp3'); lobbyAudio.loop = true; lobbyAudio.preload = "auto";
     const gameplayAudio = new Audio(BASE_URL + 'gameplay.mp3'); gameplayAudio.loop = true; gameplayAudio.preload = "auto";
+
+    let audioWokenUp = false;
 
     selectCategory('random');
     applyAudioSettings();
@@ -560,8 +555,6 @@
     function wakeUpMobileAudio() {
         if (audioWokenUp) return;
         
-        // Temporarily dropping volumes to 0 allows a true zero-latency hardware buffer connection 
-        // without causing track overlap distortion or unexpected sounds on first load.
         const originalMusicVol = lobbyAudio.volume;
         const originalSfxVol = countdownAudio.volume;
 
@@ -570,7 +563,7 @@
         countdownAudio.volume = 0;
         passAudio.volume = 0;
 
-        // Fire all streams concurrently to wake up mobile background sound-cards instantly
+        // Force multi-stream unlock concurrently across webkit soundboards
         Promise.all([
             lobbyAudio.play().then(() => { lobbyAudio.pause(); lobbyAudio.currentTime = 0; lobbyAudio.volume = originalMusicVol; }),
             gameplayAudio.play().then(() => { gameplayAudio.pause(); gameplayAudio.currentTime = 0; gameplayAudio.volume = originalMusicVol; }),
@@ -578,7 +571,6 @@
             passAudio.play().then(() => { passAudio.pause(); passAudio.currentTime = 0; passAudio.volume = originalSfxVol; })
         ]).then(() => {
             audioWokenUp = true;
-            // Instantly transition into the lobby theme once authorization passes
             if (!gameActive && !isMuted) {
                 lobbyAudio.play().catch(() => {});
             }
@@ -681,7 +673,7 @@
         if (e.key === 'k' || e.key === 'K') passTurn(2);
     });
 
-   function triggerSubtleImpact(playerNum) {
+    function triggerSubtleImpact(playerNum) {
         const targetBtn = playerNum === 1 ? document.getElementById('p1-btn') : document.getElementById('p2-btn');
         const flashClass = playerNum === 1 ? 'btn-flash-white' : 'btn-flash-purple';
         
@@ -691,7 +683,6 @@
         }, 120);
 
         if (!isMuted && audioWokenUp) {
-            // Setting this to play directly via a microtask avoids browser engine cycle bottlenecks
             passAudio.pause();
             passAudio.currentTime = 0;
             setTimeout(() => { passAudio.play().catch(e => {}); }, 0);
@@ -703,7 +694,6 @@
 
         document.getElementById('start-btn').disabled = true;
 
-        // Clean kill on the lobby track before starting countdown sounds
         lobbyAudio.pause();
         lobbyAudio.currentTime = 0;
 
@@ -729,7 +719,6 @@
     function runGameTimer() {
         if (document.hidden) return; 
         
-        // Safe channel initialization pattern prevents mobile distortion overlaps
         gameplayAudio.pause();
         gameplayAudio.currentTime = 0;
         if (!isMuted && audioWokenUp) {
