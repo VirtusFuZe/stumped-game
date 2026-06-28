@@ -563,6 +563,19 @@
         countdownAudio.volume = 0;
         passAudio.volume = 0;
 
+        // Fire each stream independently so a network buffer delay won't crash the script
+        lobbyAudio.play().then(() => { lobbyAudio.pause(); lobbyAudio.currentTime = 0; lobbyAudio.volume = originalMusicVol; if(!gameActive && !isMuted) lobbyAudio.play().catch(()=>{}); }).catch(e=>{});
+        gameplayAudio.play().then(() => { gameplayAudio.pause(); gameplayAudio.currentTime = 0; gameplayAudio.volume = originalMusicVol; }).catch(e=>{});
+        countdownAudio.play().then(() => { countdownAudio.pause(); countdownAudio.currentTime = 0; countdownAudio.volume = originalSfxVol; }).catch(e=>{});
+        passAudio.play().then(() => { passAudio.pause(); passAudio.currentTime = 0; passAudio.volume = originalSfxVol; }).catch(e=>{});
+        
+        // Instantly mark as true so buttons unlock immediately regardless of audio track network speed
+        audioWokenUp = true;
+
+        window.removeEventListener('click', wakeUpMobileAudio);
+        window.removeEventListener('touchstart', wakeUpMobileAudio);
+    }
+
         // Force multi-stream unlock concurrently across webkit soundboards
         Promise.all([
             lobbyAudio.play().then(() => { lobbyAudio.pause(); lobbyAudio.currentTime = 0; lobbyAudio.volume = originalMusicVol; }),
