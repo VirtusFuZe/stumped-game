@@ -213,6 +213,28 @@
             background-color: #e3dcf9;
             font-size: 12px;
         }
+
+        /* Credits Attribution Display styling */
+        .credits-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            max-height: 90px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #e3dcf9;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .credits-container p {
+            margin: 0 0 6px 0;
+        }
+        .credits-container strong {
+            color: #ffffff;
+        }
+
         .close-settings-btn {
             margin-top: auto;
             background: #ffffff;
@@ -517,7 +539,7 @@
             <label for="sfx-volume">SOUND EFFECTS VOLUME</label>
             <div class="setting-control">
                 <input type="range" id="sfx-volume" class="setting-slider" min="0" max="100" value="35" oninput="applyAudioSettings()">
-                <span id="sfx-vol-val" class="setting-value">75%</span>
+                <span id="sfx-vol-val" class="setting-value">35%</span>
             </div>
         </div>
 
@@ -543,6 +565,14 @@
             <button id="cat-technology" class="category-btn" onclick="selectCategory('technology')">💻 Technology</button>
             <button id="cat-foodDrink" class="category-btn" onclick="selectCategory('foodDrink')">🍕 Food & Drink</button>
             <button id="cat-random" class="category-btn random-btn" onclick="selectCategory('random')">🃏 RANDOM (1000+ Options)</button>
+        </div>
+
+        <div class="setting-section-title">CREDITS & ATTRIBUTIONS</div>
+        <div class="credits-container">
+            <p><strong>Lobby Music:</strong> [Track Title] by [Artist Name]</p>
+            <p><strong>Gameplay Track:</strong> [Track Title] by [Artist Name]</p>
+            <p><strong>Sound Effects:</strong> [SFX Source / Platform Credits]</p>
+            <p><strong>Visual Assets & Design:</strong> JammyCreatives</p>
         </div>
 
         <button class="btn close-settings-btn" onclick="toggleSettingsPanel(false)">SAVE & CLOSE</button>
@@ -590,7 +620,7 @@
 </div>
 
 <script>
-    const BASE_URL = './Assets/'; // Absolute local mapping fixed for GitHub pages hosting architectures
+    const BASE_URL = './Assets/'; 
 
     const categories = {
         popCulture: ["Barbie", "Batman", "Yoda", "Hogwarts", "Kardashian", "Shrek", "Beyoncé", "Godzilla", "Marvel", "TARDIS", "Pikachu", "Dracula", "Gandalf", "Matrix", "Simpsons", "Joker", "Disney", "Seinfeld", "Gollum", "Skywalker", "Spiderman", "Tarzan", "Sherlock", "Potter", "Minion", "Bond", "Swifties", "Elmo", "Muppets", "Wakanda", "Oscar", "Emmy", "Grammy", "Hollywood", "Anime", "Cosplay", "Trekkie", "Jedi", "Sith", "Voldemort", "Scooby", "Shaggy", "Homer", "Snoopy", "Popeye", "Buzz", "Woody", "Elsa", "Mulan", "Simba", "Shuri", "Katniss", "Khaleesi", "Geralt", "Wednesday", "Thanos", "Groot", "Rocky", "Rambo", "Terminator", "Neo", "Morpheus", "Trinity", "Legolas", "Frodo", "Sauron", "Borat", "Deadpool", "Wolverine", "Lassie", "Pokemon", "Avengers", "Omniverse", "Multiverse", "Fanfiction", "Fandom", "Spoiler", "Reboot", "Sequel", "Prequel", "Sitcom", "Paparazzi", "Celebrity", "Influencer", "Meme", "Viral", "Algorithm", "Streaming", "Binge", "Subtitles", "Cameo", "Autograph", "Billboard", "Red-carpet", "Blockbuster", "Glitz", "Glamour", "Gossip", "Icon"],
@@ -610,17 +640,12 @@
     let maxRoundTime = 20, timeLeft = 20, timerId = null, gameActive = false;
     let p1Name = "Player 1", p2Name = "Player 2", isMuted = false;
 
-   // Media Pipeline Array Mapping
     const countdownAudio = new Audio(BASE_URL + 'countdown.mp3'); countdownAudio.preload = "auto";
     const passAudio = new Audio(BASE_URL + 'pass.mp3'); passAudio.preload = "auto";
     const lobbyAudio = new Audio(BASE_URL + 'lobby.mp3'); lobbyAudio.loop = true; lobbyAudio.preload = "auto";
     const gameplayAudio = new Audio(BASE_URL + 'gameplay.mp3'); gameplayAudio.loop = true; gameplayAudio.preload = "auto";
-    
-    // REMOVED .loop = true so it only plays through once
     const applauseAudio = new Audio(BASE_URL + 'applause.mp3'); applauseAudio.preload = "auto";
 
-    // Add your list of celebration gif filenames here! 
-    // Just drop them into your Assets folder and match the names exactly.
     const celebrationGifs = [
         "celebration1.gif",
         "celebration2.gif",
@@ -633,6 +658,7 @@
     selectCategory('random');
     applyAudioSettings();
 
+    // Anti-jumpscare sequential audio setup pipeline
     function wakeUpMobileAudio() {
         if (audioWokenUp) return;
         audioWokenUp = true;
@@ -640,17 +666,38 @@
         const originalMusicVol = lobbyAudio.volume;
         const originalSfxVol = countdownAudio.volume;
 
+        // Set volumes to zero immediately to prevent any popping
         lobbyAudio.volume = 0;
         gameplayAudio.volume = 0;
         countdownAudio.volume = 0;
         passAudio.volume = 0;
         applauseAudio.volume = 0;
 
-        lobbyAudio.play().then(() => { lobbyAudio.pause(); lobbyAudio.currentTime = 0; lobbyAudio.volume = originalMusicVol; if(!gameActive && !isMuted) lobbyAudio.play().catch(()=>{}); }).catch(e=>{});
-        gameplayAudio.play().then(() => { gameplayAudio.pause(); gameplayAudio.currentTime = 0; gameplayAudio.volume = originalMusicVol; }).catch(e=>{});
-        countdownAudio.play().then(() => { countdownAudio.pause(); countdownAudio.currentTime = 0; countdownAudio.volume = originalSfxVol; }).catch(e=>{});
-        passAudio.play().then(() => { passAudio.pause(); passAudio.currentTime = 0; passAudio.volume = originalSfxVol; }).catch(e=>{});
-        applauseAudio.play().then(() => { applauseAudio.pause(); applauseAudio.currentTime = 0; applauseAudio.volume = originalMusicVol; }).catch(e=>{});
+        // Stagger track plays sequentially to protect the browser hardware soundboard mapping
+        setTimeout(() => {
+            lobbyAudio.play().then(() => { 
+                lobbyAudio.pause(); 
+                lobbyAudio.currentTime = 0; 
+                lobbyAudio.volume = originalMusicVol; 
+                if(!gameActive && !isMuted) lobbyAudio.play().catch(()=>{}); 
+            }).catch(e=>{});
+        }, 0);
+
+        setTimeout(() => {
+            gameplayAudio.play().then(() => { gameplayAudio.pause(); gameplayAudio.currentTime = 0; gameplayAudio.volume = originalMusicVol; }).catch(e=>{});
+        }, 50);
+
+        setTimeout(() => {
+            countdownAudio.play().then(() => { countdownAudio.pause(); countdownAudio.currentTime = 0; countdownAudio.volume = originalSfxVol; }).catch(e=>{});
+        }, 100);
+
+        setTimeout(() => {
+            passAudio.play().then(() => { passAudio.pause(); passAudio.currentTime = 0; passAudio.volume = originalSfxVol; }).catch(e=>{});
+        }, 150);
+
+        setTimeout(() => {
+            applauseAudio.play().then(() => { applauseAudio.pause(); applauseAudio.currentTime = 0; applauseAudio.volume = originalMusicVol; }).catch(e=>{});
+        }, 200);
 
         window.removeEventListener('click', wakeUpMobileAudio);
         window.removeEventListener('touchstart', wakeUpMobileAudio);
@@ -757,10 +804,14 @@
         const targetBtn = playerNum === 1 ? document.getElementById('p1-btn') : document.getElementById('p2-btn');
         const flashClass = playerNum === 1 ? 'btn-flash-white' : 'btn-flash-purple';
         
-        // Execute physical card containment shake
-        gameBox.classList.remove('shake-active');
-        void gameBox.offsetWidth; // Reflow switch fires layout rendering instantly
-        gameBox.classList.add('shake-active');
+        // Detect mobile layout profiles (Bypasses screen shake to prevent mobile zooming/glitches)
+        const isMobile = window.innerWidth <= 480 || ('touchstart' in window) || (navigator.maxTouchPoints > 0);
+        
+        if (!isMobile) {
+            gameBox.classList.remove('shake-active');
+            void gameBox.offsetWidth; 
+            gameBox.classList.add('shake-active');
+        }
 
         targetBtn.classList.add(flashClass);
         setTimeout(() => {
@@ -860,14 +911,12 @@
             gameActive = false;
             clearInterval(timerId);
             
-            // Kill background theme lines immediately
             gameplayAudio.pause();
             lobbyAudio.pause();
 
             const winnerName = p1Score >= 5 ? p1Name : p2Name;
             document.getElementById('celebration-banner').innerText = `${winnerName.toUpperCase()} WINS!`;
             
-            // Pick a random gif from the pool and assign it to the overlay image element
             const randomGif = celebrationGifs[Math.floor(Math.random() * celebrationGifs.length)];
             document.getElementById('celebration-gif').src = BASE_URL + randomGif;
 
@@ -923,7 +972,6 @@
         }
         document.getElementById('turn-indicator').innerText = "";
 
-        // Check if round win triggered the final championship cap before reloading lobby tracks
         if (checkChampionshipStatus()) return;
 
         document.getElementById('start-btn').disabled = false;
