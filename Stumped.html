@@ -33,6 +33,21 @@
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
             position: relative;
             transform-origin: center center;
+            transition: transform 0.1s ease;
+        }
+
+        /* Gentle Shake Animation Framework */
+        .shake-active {
+            animation: gentle-shake 0.2s ease-in-out;
+        }
+
+        @keyframes gentle-shake {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-4px, 2px); }
+            40% { transform: translate(4px, -2px); }
+            60% { transform: translate(-3px, -1px); }
+            80% { transform: translate(3px, 1px); }
+            100% { transform: translate(0, 0); }
         }
 
         /* Interactive Action Icons (Cog & Info) */
@@ -203,6 +218,54 @@
             background: #ffffff;
             color: #9876e0;
             padding: 10px;
+        }
+
+        /* Grand Celebration Overlay */
+        #celebration-panel {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(43, 23, 84, 0.96);
+            border: 5px solid #ffffff;
+            border-radius: 20px;
+            z-index: 200;
+            box-sizing: border-box;
+            padding: 20px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #celebration-gif {
+            max-width: 80%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 12px;
+            border: 3px solid #ffffff;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+        #celebration-banner {
+            font-size: 26px;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            margin-bottom: 5px;
+        }
+        #celebration-subtitle {
+            font-size: 16px;
+            color: #e3dcf9;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+        .play-again-btn {
+            background-color: #ffffff;
+            color: #2b2154;
+            font-size: 18px;
+            padding: 14px 28px;
+            box-shadow: 0 6px 0 #a488e5;
         }
 
         /* Branding Responsive Containers */
@@ -424,6 +487,13 @@
     <img id="settings-cog" src="Assets/settings.png" alt="Settings" onclick="toggleSettingsPanel(true)">
     <img id="info-icon" src="Assets/info.png" alt="How to Play Guide" onclick="toggleInfoPanel(true)">
 
+    <div id="celebration-panel">
+        <img id="celebration-gif" src="Assets/celebration.gif" alt="Celebration!">
+        <div id="celebration-banner">PLAYER WINS! 🏆</div>
+        <div id="celebration-subtitle">Your friend is still Stumped though...</div>
+        <button class="btn play-again-btn" onclick="resetEntireChampionship()">PLAY AGAIN</button>
+    </div>
+
     <div id="info-panel">
         <div class="info-content-wrapper">
             <span class="close-x-btn" onclick="toggleInfoPanel(false)">&times;</span>
@@ -438,8 +508,8 @@
         <div class="setting-row">
             <label for="music-volume">MUSIC VOLUME</label>
             <div class="setting-control">
-                <input type="range" id="music-volume" class="setting-slider" min="0" max="100" value="10" oninput="applyAudioSettings()">
-                <span id="music-vol-val" class="setting-value">10%</span>
+                <input type="range" id="music-volume" class="setting-slider" min="0" max="100" value="50" oninput="applyAudioSettings()">
+                <span id="music-vol-val" class="setting-value">50%</span>
             </div>
         </div>
 
@@ -520,7 +590,7 @@
 </div>
 
 <script>
-    const BASE_URL = './Assets/';
+    const BASE_URL = './Assets/'; // Absolute local mapping fixed for GitHub pages hosting architectures
 
     const categories = {
         popCulture: ["Barbie", "Batman", "Yoda", "Hogwarts", "Kardashian", "Shrek", "Beyoncé", "Godzilla", "Marvel", "TARDIS", "Pikachu", "Dracula", "Gandalf", "Matrix", "Simpsons", "Joker", "Disney", "Seinfeld", "Gollum", "Skywalker", "Spiderman", "Tarzan", "Sherlock", "Potter", "Minion", "Bond", "Swifties", "Elmo", "Muppets", "Wakanda", "Oscar", "Emmy", "Grammy", "Hollywood", "Anime", "Cosplay", "Trekkie", "Jedi", "Sith", "Voldemort", "Scooby", "Shaggy", "Homer", "Snoopy", "Popeye", "Buzz", "Woody", "Elsa", "Mulan", "Simba", "Shuri", "Katniss", "Khaleesi", "Geralt", "Wednesday", "Thanos", "Groot", "Rocky", "Rambo", "Terminator", "Neo", "Morpheus", "Trinity", "Legolas", "Frodo", "Sauron", "Borat", "Deadpool", "Wolverine", "Lassie", "Pokemon", "Avengers", "Omniverse", "Multiverse", "Fanfiction", "Fandom", "Spoiler", "Reboot", "Sequel", "Prequel", "Sitcom", "Paparazzi", "Celebrity", "Influencer", "Meme", "Viral", "Algorithm", "Streaming", "Binge", "Subtitles", "Cameo", "Autograph", "Billboard", "Red-carpet", "Blockbuster", "Glitz", "Glamour", "Gossip", "Icon"],
@@ -540,18 +610,29 @@
     let maxRoundTime = 20, timeLeft = 20, timerId = null, gameActive = false;
     let p1Name = "Player 1", p2Name = "Player 2", isMuted = false;
 
-    // Direct, optimized configuration blocks
+   // Media Pipeline Array Mapping
     const countdownAudio = new Audio(BASE_URL + 'countdown.mp3'); countdownAudio.preload = "auto";
     const passAudio = new Audio(BASE_URL + 'pass.mp3'); passAudio.preload = "auto";
     const lobbyAudio = new Audio(BASE_URL + 'lobby.mp3'); lobbyAudio.loop = true; lobbyAudio.preload = "auto";
     const gameplayAudio = new Audio(BASE_URL + 'gameplay.mp3'); gameplayAudio.loop = true; gameplayAudio.preload = "auto";
+    
+    // REMOVED .loop = true so it only plays through once
+    const applauseAudio = new Audio(BASE_URL + 'applause.mp3'); applauseAudio.preload = "auto";
+
+    // Add your list of celebration gif filenames here! 
+    // Just drop them into your Assets folder and match the names exactly.
+    const celebrationGifs = [
+        "celebration1.gif",
+        "celebration2.gif",
+        "celebration3.gif",
+        "celebration4.gif"
+    ];
 
     let audioWokenUp = false;
 
     selectCategory('random');
     applyAudioSettings();
 
-    // Isolated, decoupled initialization that cannot crash button click actions
     function wakeUpMobileAudio() {
         if (audioWokenUp) return;
         audioWokenUp = true;
@@ -563,12 +644,13 @@
         gameplayAudio.volume = 0;
         countdownAudio.volume = 0;
         passAudio.volume = 0;
+        applauseAudio.volume = 0;
 
-        // Decoupled fires ensure network latency won't freeze code logic strings
         lobbyAudio.play().then(() => { lobbyAudio.pause(); lobbyAudio.currentTime = 0; lobbyAudio.volume = originalMusicVol; if(!gameActive && !isMuted) lobbyAudio.play().catch(()=>{}); }).catch(e=>{});
         gameplayAudio.play().then(() => { gameplayAudio.pause(); gameplayAudio.currentTime = 0; gameplayAudio.volume = originalMusicVol; }).catch(e=>{});
         countdownAudio.play().then(() => { countdownAudio.pause(); countdownAudio.currentTime = 0; countdownAudio.volume = originalSfxVol; }).catch(e=>{});
         passAudio.play().then(() => { passAudio.pause(); passAudio.currentTime = 0; passAudio.volume = originalSfxVol; }).catch(e=>{});
+        applauseAudio.play().then(() => { applauseAudio.pause(); applauseAudio.currentTime = 0; applauseAudio.volume = originalMusicVol; }).catch(e=>{});
 
         window.removeEventListener('click', wakeUpMobileAudio);
         window.removeEventListener('touchstart', wakeUpMobileAudio);
@@ -581,9 +663,12 @@
         if (document.hidden) {
             lobbyAudio.pause();
             gameplayAudio.pause();
+            applauseAudio.pause();
         } else {
             if (!isMuted && audioWokenUp) {
-                if (gameActive) {
+                if (document.getElementById('celebration-panel').style.display === 'flex') {
+                    applauseAudio.play().catch(e => {});
+                } else if (gameActive) {
                     gameplayAudio.play().catch(e => {});
                 } else {
                     lobbyAudio.play().catch(e => {});
@@ -630,6 +715,7 @@
 
         lobbyAudio.volume = musicVol / 100;
         gameplayAudio.volume = musicVol / 100;
+        applauseAudio.volume = musicVol / 100;
         countdownAudio.volume = sfxVol / 100;
         passAudio.volume = sfxVol / 100;
     }
@@ -667,9 +753,15 @@
     });
 
     function triggerSubtleImpact(playerNum) {
+        const gameBox = document.getElementById('game-box');
         const targetBtn = playerNum === 1 ? document.getElementById('p1-btn') : document.getElementById('p2-btn');
         const flashClass = playerNum === 1 ? 'btn-flash-white' : 'btn-flash-purple';
         
+        // Execute physical card containment shake
+        gameBox.classList.remove('shake-active');
+        void gameBox.offsetWidth; // Reflow switch fires layout rendering instantly
+        gameBox.classList.add('shake-active');
+
         targetBtn.classList.add(flashClass);
         setTimeout(() => {
             targetBtn.classList.remove(flashClass);
@@ -686,7 +778,6 @@
         if (gameActive) return;
 
         document.getElementById('start-btn').disabled = true;
-
         lobbyAudio.pause();
         lobbyAudio.currentTime = 0;
 
@@ -745,7 +836,6 @@
         if (!gameActive || activePlayer !== playerNum) return;
         
         triggerSubtleImpact(playerNum);
-
         activePlayer = (activePlayer === 1) ? 2 : 1;
         updateTurnUI();
     }
@@ -765,21 +855,62 @@
         }
     }
 
+    function checkChampionshipStatus() {
+        if (p1Score >= 5 || p2Score >= 5) {
+            gameActive = false;
+            clearInterval(timerId);
+            
+            // Kill background theme lines immediately
+            gameplayAudio.pause();
+            lobbyAudio.pause();
+
+            const winnerName = p1Score >= 5 ? p1Name : p2Name;
+            document.getElementById('celebration-banner').innerText = `${winnerName.toUpperCase()} WINS!`;
+            
+            // Pick a random gif from the pool and assign it to the overlay image element
+            const randomGif = celebrationGifs[Math.floor(Math.random() * celebrationGifs.length)];
+            document.getElementById('celebration-gif').src = BASE_URL + randomGif;
+
+            if (!isMuted && audioWokenUp) {
+                applauseAudio.currentTime = 0;
+                applauseAudio.play().catch(e => {});
+            }
+
+            document.getElementById('celebration-panel').style.display = 'flex';
+            return true;
+        }
+        return false;
+    }
+
+    function resetEntireChampionship() {
+        p1Score = 0;
+        p2Score = 0;
+        document.getElementById('p1-score').innerText = "0";
+        document.getElementById('p2-score').innerText = "0";
+        
+        applauseAudio.pause();
+        applauseAudio.currentTime = 0;
+
+        document.getElementById('celebration-panel').style.display = 'none';
+        document.getElementById('card-text').innerHTML = `TYPE YOUR NAMES & HIT START!<br><span style="font-size: 13px; color:#a488e5; font-weight: normal; display:inline-block; margin-top:6px;">You can change Categories anytime in the Settings ⚙️</span>`;
+        document.getElementById('timer-text').innerText = maxRoundTime.toFixed(1) + "s";
+        document.getElementById('timer-bar').style.width = "100%";
+        document.getElementById('start-btn').disabled = false;
+
+        if (!isMuted && audioWokenUp) {
+            lobbyAudio.play().catch(e => {});
+        }
+    }
+
     function endRound() {
         gameActive = false;
         clearInterval(timerId);
         
         gameplayAudio.pause();
         gameplayAudio.currentTime = 0;
-        
-        if (!isMuted && !document.hidden && audioWokenUp) {
-            lobbyAudio.currentTime = 0;
-            lobbyAudio.play().catch(e => {});
-        }
 
         document.getElementById('p1-btn').disabled = true;
         document.getElementById('p2-btn').disabled = true;
-        document.getElementById('start-btn').disabled = false;
 
         if (activePlayer === 1) {
             p2Score++;
@@ -791,6 +922,15 @@
             document.getElementById('card-text').innerText = `Sucks to suck ${p2Name}. ${p1Name} won the round.`;
         }
         document.getElementById('turn-indicator').innerText = "";
+
+        // Check if round win triggered the final championship cap before reloading lobby tracks
+        if (checkChampionshipStatus()) return;
+
+        document.getElementById('start-btn').disabled = false;
+        if (!isMuted && !document.hidden && audioWokenUp) {
+            lobbyAudio.currentTime = 0;
+            lobbyAudio.play().catch(e => {});
+        }
     }
 </script>
 </body>
