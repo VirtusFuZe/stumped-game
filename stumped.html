@@ -50,7 +50,7 @@
             100% { transform: translate(0, 0); }
         }
 
-        /* Interactive Action Icons (Cog, Info, Mute) */
+        /* Interactive Action Icons (Cog, Info, Mute wrappers) */
         #settings-cog {
             position: absolute;
             top: 15px;
@@ -73,7 +73,7 @@
             height: 28px;
             cursor: pointer;
             z-index: 100;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, opacity 0.2s ease;
         }
         #info-icon:hover {
             transform: scale(1.1);
@@ -87,13 +87,16 @@
             height: 28px;
             cursor: pointer;
             z-index: 100;
-            font-size: 20px;
-            line-height: 28px;
-            text-align: center;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, opacity 0.2s ease;
         }
         #mute-toggle:hover {
             transform: scale(1.1);
+        }
+        #mute-status-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         /* Full-screen Responsive How-To-Play Modal Overlay */
@@ -526,7 +529,9 @@
     <img id="settings-cog" src="Assets/settings.png" alt="Settings" onclick="toggleSettingsPanel(true)">
     <img id="info-icon" src="Assets/info.png" alt="How to Play Guide" onclick="toggleInfoPanel(true)">
     
-    <div id="mute-toggle" onclick="manualMuteToggle()">🔊</div>
+    <div id="mute-toggle" onclick="manualMuteToggle()">
+        <img id="mute-status-img" src="Assets/muted.png" alt="Audio Muted Status">
+    </div>
 
     <div id="celebration-panel">
         <img id="celebration-gif" src="Assets/celebration.gif" alt="Celebration!">
@@ -662,11 +667,8 @@
     let maxRoundTime = 20, timeLeft = 20, timerId = null, gameActive = false;
     let p1Name = "Player 1", p2Name = "Player 2";
 
-    // Detect mobile layout profiles on baseline execution loop
-    const isMobileDevice = window.innerWidth <= 480 || ('touchstart' in window) || (navigator.maxTouchPoints > 0);
-    
-    // Set baseline master mute flag conditionally (Mobile defaults to muted, Desktop stays live)
-    let isMuted = isMobileDevice; 
+    // Structural modification: Game now strictly starts muted by default on ALL environments
+    let isMuted = true; 
 
     const countdownAudio = new Audio(BASE_URL + 'countdown.mp3'); countdownAudio.preload = "auto";
     const passAudio = new Audio(BASE_URL + 'pass.mp3'); passAudio.preload = "auto";
@@ -683,11 +685,13 @@
 
     let audioWokenUp = false;
 
+    // Detect mobile layout profiles for hardware bypass metrics
+    const isMobileDevice = window.innerWidth <= 480 || ('touchstart' in window) || (navigator.maxTouchPoints > 0);
+
     selectCategory('random');
     applyAudioSettings();
     updateMuteToggleButtonUI();
 
-    // Zero-Jumpscare Silent Audio Pipeline
     function wakeUpMobileAudio() {
         if (audioWokenUp) return;
         audioWokenUp = true;
@@ -695,10 +699,8 @@
         const originalMusicVol = lobbyAudio.volume;
         const originalSfxVol = countdownAudio.volume;
 
-        // Force elements to match variable state before connecting sound cards
         syncHardwareMuteStates();
 
-        // Connect contexts cleanly behind browser privacy security locks
         lobbyAudio.play().catch(e=>{});
         gameplayAudio.play().catch(e=>{});
         countdownAudio.play().catch(e=>{});
@@ -712,14 +714,12 @@
             passAudio.pause(); passAudio.currentTime = 0;
             applauseAudio.pause(); applauseAudio.currentTime = 0;
 
-            // Restore baseline logic volumes
             lobbyAudio.volume = originalMusicVol;
             gameplayAudio.volume = originalMusicVol;
             countdownAudio.volume = originalSfxVol;
             passAudio.volume = originalSfxVol;
             applauseAudio.volume = originalMusicVol;
 
-            // Only fire if the global variable allows it
             if (!gameActive && !isMuted) {
                 lobbyAudio.play().catch(e => {});
             }
@@ -745,7 +745,6 @@
         syncHardwareMuteStates();
         updateMuteToggleButtonUI();
 
-        // Handle live track changes immediately on toggling
         if (isMuted) {
             lobbyAudio.pause();
             gameplayAudio.pause();
@@ -764,7 +763,14 @@
     }
 
     function updateMuteToggleButtonUI() {
-        document.getElementById('mute-toggle').innerText = isMuted ? "🔇" : "🔊";
+        const targetImg = document.getElementById('mute-status-img');
+        if (isMuted) {
+            targetImg.src = BASE_URL + "muted.png";
+            targetImg.alt = "Audio Muted";
+        } else {
+            targetImg.src = BASE_URL + "unmuted.png";
+            targetImg.alt = "Audio Unmuted";
+        }
     }
 
     document.addEventListener("visibilitychange", function() {
@@ -787,9 +793,16 @@
         }
     });
 
+    // Modified to show/hide mute and info buttons dynamically when opening settings
     function toggleSettingsPanel(show) {
         if (gameActive && show) return; 
+        
         document.getElementById('settings-panel').style.display = show ? 'flex' : 'none';
+        
+        // Dynamic structural overlay toggle execution loop
+        const visibilityValue = show ? 'none' : 'block';
+        document.getElementById('info-icon').style.display = visibilityValue;
+        document.getElementById('mute-toggle').style.display = visibilityValue;
     }
 
     function toggleInfoPanel(show) {
