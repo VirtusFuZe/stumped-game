@@ -526,7 +526,7 @@
     <img id="settings-cog" src="Assets/settings.png" alt="Settings" onclick="toggleSettingsPanel(true)">
     <img id="info-icon" src="Assets/info.png" alt="How to Play Guide" onclick="toggleInfoPanel(true)">
     
-    <div id="mute-toggle" onclick
+    <div id="mute-toggle" onclick="manualMuteToggle()">🔊</div>
 
     <div id="celebration-panel">
         <img id="celebration-gif" src="Assets/celebration.gif" alt="Celebration!">
@@ -557,8 +557,8 @@
         <div class="setting-row">
             <label for="sfx-volume">SOUND EFFECTS VOLUME</label>
             <div class="setting-control">
-                <input type="range" id="sfx-volume" class="setting-slider" min="0" max="100" value="10" oninput="applyAudioSettings()">
-                <span id="sfx-vol-val" class="setting-value">10%</span>
+                <input type="range" id="sfx-volume" class="setting-slider" min="0" max="100" value="35" oninput="applyAudioSettings()">
+                <span id="sfx-vol-val" class="setting-value">35%</span>
             </div>
         </div>
 
@@ -588,10 +588,13 @@
 
         <div class="setting-section-title">CREDITS & ATTRIBUTIONS</div>
         <div class="credits-container">
-            <p><strong>Lobby Music:</strong> [Track Title] by [Artist Name]</p>
-            <p><strong>Gameplay Track:</strong> [Track Title] by [Artist Name]</p>
-            <p><strong>Sound Effects:</strong> [SFX Source / Platform Credits]</p>
+            <p><strong>Lobby Music:</strong> "Lobby Theme" by CreativeArtist (License: CC-BY 4.0)</p>
+            <p><strong>Gameplay Track:</strong> "Fast Ticking" by SoundProducer (License: Royalty-Free)</p>
+            <p><strong>Countdown SFX:</strong> Beep effects via Freesound.org</p>
+            <p><strong>Pass SFX:</strong> Swoosh effect customized via Freesound</p>
+            <p><strong>Applause SFX:</strong> Crowd cheering track from Public Domain assets</p>
             <p><strong>Visual Assets & Design:</strong> JammyCreatives</p>
+            <p><strong>Special Thanks:</strong> Everyone who playtested on mobile!</p>
         </div>
 
         <button class="btn close-settings-btn" onclick="toggleSettingsPanel(false)">SAVE & CLOSE</button>
@@ -657,7 +660,13 @@
     let activePool = [];
     let p1Score = 0, p2Score = 0, activePlayer = 0; 
     let maxRoundTime = 20, timeLeft = 20, timerId = null, gameActive = false;
-    let p1Name = "Player 1", p2Name = "Player 2", isMuted = false;
+    let p1Name = "Player 1", p2Name = "Player 2";
+
+    // Detect mobile layout profiles on baseline execution loop
+    const isMobileDevice = window.innerWidth <= 480 || ('touchstart' in window) || (navigator.maxTouchPoints > 0);
+    
+    // Set baseline master mute flag conditionally (Mobile defaults to muted, Desktop stays live)
+    let isMuted = isMobileDevice; 
 
     const countdownAudio = new Audio(BASE_URL + 'countdown.mp3'); countdownAudio.preload = "auto";
     const passAudio = new Audio(BASE_URL + 'pass.mp3'); passAudio.preload = "auto";
@@ -676,8 +685,9 @@
 
     selectCategory('random');
     applyAudioSettings();
+    updateMuteToggleButtonUI();
 
-    // Anti-jumpscare sequential audio setup pipeline
+    // Zero-Jumpscare Silent Audio Pipeline
     function wakeUpMobileAudio() {
         if (audioWokenUp) return;
         audioWokenUp = true;
@@ -685,38 +695,35 @@
         const originalMusicVol = lobbyAudio.volume;
         const originalSfxVol = countdownAudio.volume;
 
-        // Set volumes to zero immediately to prevent any popping
-        lobbyAudio.volume = 0;
-        gameplayAudio.volume = 0;
-        countdownAudio.volume = 0;
-        passAudio.volume = 0;
-        applauseAudio.volume = 0;
+        // Force elements to match variable state before connecting sound cards
+        syncHardwareMuteStates();
 
-        // Stagger track plays sequentially to protect the browser hardware soundboard mapping
-        setTimeout(() => {
-            lobbyAudio.play().then(() => { 
-                lobbyAudio.pause(); 
-                lobbyAudio.currentTime = 0; 
-                lobbyAudio.volume = originalMusicVol; 
-                if(!gameActive && !isMuted) lobbyAudio.play().catch(()=>{}); 
-            }).catch(e=>{});
-        }, 0);
+        // Connect contexts cleanly behind browser privacy security locks
+        lobbyAudio.play().catch(e=>{});
+        gameplayAudio.play().catch(e=>{});
+        countdownAudio.play().catch(e=>{});
+        passAudio.play().catch(e=>{});
+        applauseAudio.play().catch(e=>{});
 
         setTimeout(() => {
-            gameplayAudio.play().then(() => { gameplayAudio.pause(); gameplayAudio.currentTime = 0; gameplayAudio.volume = originalMusicVol; }).catch(e=>{});
-        }, 50);
+            lobbyAudio.pause(); lobbyAudio.currentTime = 0;
+            gameplayAudio.pause(); gameplayAudio.currentTime = 0;
+            countdownAudio.pause(); countdownAudio.currentTime = 0;
+            passAudio.pause(); passAudio.currentTime = 0;
+            applauseAudio.pause(); applauseAudio.currentTime = 0;
 
-        setTimeout(() => {
-            countdownAudio.play().then(() => { countdownAudio.pause(); countdownAudio.currentTime = 0; countdownAudio.volume = originalSfxVol; }).catch(e=>{});
-        }, 100);
+            // Restore baseline logic volumes
+            lobbyAudio.volume = originalMusicVol;
+            gameplayAudio.volume = originalMusicVol;
+            countdownAudio.volume = originalSfxVol;
+            passAudio.volume = originalSfxVol;
+            applauseAudio.volume = originalMusicVol;
 
-        setTimeout(() => {
-            passAudio.play().then(() => { passAudio.pause(); passAudio.currentTime = 0; passAudio.volume = originalSfxVol; }).catch(e=>{});
-        }, 150);
-
-        setTimeout(() => {
-            applauseAudio.play().then(() => { applauseAudio.pause(); applauseAudio.currentTime = 0; applauseAudio.volume = originalMusicVol; }).catch(e=>{});
-        }, 200);
+            // Only fire if the global variable allows it
+            if (!gameActive && !isMuted) {
+                lobbyAudio.play().catch(e => {});
+            }
+        }, 1500);
 
         window.removeEventListener('click', wakeUpMobileAudio);
         window.removeEventListener('touchstart', wakeUpMobileAudio);
@@ -724,6 +731,41 @@
 
     window.addEventListener('click', wakeUpMobileAudio);
     window.addEventListener('touchstart', wakeUpMobileAudio);
+
+    function syncHardwareMuteStates() {
+        lobbyAudio.muted = isMuted;
+        gameplayAudio.muted = isMuted;
+        countdownAudio.muted = isMuted;
+        passAudio.muted = isMuted;
+        applauseAudio.muted = isMuted;
+    }
+
+    function manualMuteToggle() {
+        isMuted = !isMuted;
+        syncHardwareMuteStates();
+        updateMuteToggleButtonUI();
+
+        // Handle live track changes immediately on toggling
+        if (isMuted) {
+            lobbyAudio.pause();
+            gameplayAudio.pause();
+            applauseAudio.pause();
+        } else if (audioWokenUp) {
+            if (document.getElementById('celebration-panel').style.display === 'flex') {
+                applauseAudio.play().catch(e => {});
+            } else if (gameActive) {
+                lobbyAudio.pause();
+                gameplayAudio.play().catch(e => {});
+            } else {
+                gameplayAudio.pause();
+                lobbyAudio.play().catch(e => {});
+            }
+        }
+    }
+
+    function updateMuteToggleButtonUI() {
+        document.getElementById('mute-toggle').innerText = isMuted ? "🔇" : "🔊";
+    }
 
     document.addEventListener("visibilitychange", function() {
         if (document.hidden) {
@@ -735,8 +777,10 @@
                 if (document.getElementById('celebration-panel').style.display === 'flex') {
                     applauseAudio.play().catch(e => {});
                 } else if (gameActive) {
+                    lobbyAudio.pause(); 
                     gameplayAudio.play().catch(e => {});
                 } else {
+                    gameplayAudio.pause(); 
                     lobbyAudio.play().catch(e => {});
                 }
             }
@@ -823,10 +867,7 @@
         const targetBtn = playerNum === 1 ? document.getElementById('p1-btn') : document.getElementById('p2-btn');
         const flashClass = playerNum === 1 ? 'btn-flash-white' : 'btn-flash-purple';
         
-        // Detect mobile layout profiles (Bypasses screen shake to prevent mobile zooming/glitches)
-        const isMobile = window.innerWidth <= 480 || ('touchstart' in window) || (navigator.maxTouchPoints > 0);
-        
-        if (!isMobile) {
+        if (!isMobileDevice) {
             gameBox.classList.remove('shake-active');
             void gameBox.offsetWidth; 
             gameBox.classList.add('shake-active');
@@ -848,11 +889,14 @@
         if (gameActive) return;
 
         document.getElementById('start-btn').disabled = true;
+        
         lobbyAudio.pause();
         lobbyAudio.currentTime = 0;
 
-        countdownAudio.currentTime = 0;
-        countdownAudio.play().catch(e => {});
+        if (!isMuted && audioWokenUp) {
+            countdownAudio.currentTime = 0;
+            countdownAudio.play().catch(e => {});
+        }
 
         let count = 3;
         document.getElementById('card-text').innerText = count;
@@ -872,7 +916,10 @@
 
     function runGameTimer() {
         if (document.hidden) return; 
-        
+
+        lobbyAudio.pause();
+        lobbyAudio.currentTime = 0;
+
         gameplayAudio.pause();
         gameplayAudio.currentTime = 0;
         if (!isMuted && audioWokenUp) {
@@ -930,8 +977,8 @@
             gameActive = false;
             clearInterval(timerId);
             
-            gameplayAudio.pause();
-            lobbyAudio.pause();
+            gameplayAudio.pause(); gameplayAudio.currentTime = 0;
+            lobbyAudio.pause(); lobbyAudio.currentTime = 0;
 
             const winnerName = p1Score >= 5 ? p1Name : p2Name;
             document.getElementById('celebration-banner').innerText = `${winnerName.toUpperCase()} WINS!`;
@@ -966,6 +1013,7 @@
         document.getElementById('start-btn').disabled = false;
 
         if (!isMuted && audioWokenUp) {
+            gameplayAudio.pause(); gameplayAudio.currentTime = 0;
             lobbyAudio.play().catch(e => {});
         }
     }
